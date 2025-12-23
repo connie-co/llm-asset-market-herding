@@ -35,7 +35,7 @@ class TradingAgent:
     """
 
     agent_id: str
-    model_name: str = "gemma-3-12b-it"
+    model_name: str = "gemma-3-27b-it"
     temperature: float = 0.7
     include_history: bool = True
     history_length: int = 5

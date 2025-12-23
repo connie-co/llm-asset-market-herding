@@ -16,7 +16,7 @@ class SimulationConfig(BaseSettings):
     # API Configuration
     gemini_api_key: str = Field(default="", description="Google Gemini API key")
     gemini_model: str = Field(
-        default="gemma-3-12b-it", description="Gemini/Gemma model to use"
+        default="gemma-3-27b-it", description="Gemini/Gemma model to use"
     )
 
     # Market Parameters
@@ -106,3 +106,8 @@ HERDING_EXPERIMENT = ExperimentConfig(
     experiment_description="Herding condition with homogeneous information signals",
     homogeneous_information=True,
 )
+
+# Variance experiment configuration
+# List of signal noise standard deviations to test
+# Each variance will be run with both baseline (diverse) and herding (homogeneous) conditions
+VARIANCE_LIST: list[float] = [5.0,12.0, 20.0]  # Easy to modify: e.g., [5.0, 10.0, 15.0, 20.0]

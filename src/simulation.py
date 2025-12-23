@@ -277,11 +277,10 @@ def main():
         logger.error("GEMINI_API_KEY not set. Please set it in .env file.")
         sys.exit(1)
 
-    # Run baseline experiment
-    from .config import BASELINE_EXPERIMENT, HERDING_EXPERIMENT
+    from .config import ExperimentConfig, VARIANCE_LIST
     
-    # Pre-generate true value series so both experiments use the same values
-    # This ensures a fair comparison between baseline and herding conditions
+    # Pre-generate true value series so ALL experiments use the same values
+    # This ensures a fair comparison across all variance levels
     temp_market = Market(
         initial_price=sim_config.initial_price,
         initial_true_value=sim_config.initial_true_value,
@@ -291,25 +290,59 @@ def main():
     )
     true_value_series = temp_market.generate_true_value_series(sim_config.n_rounds)
     logger.info(f"Generated shared true value series for {sim_config.n_rounds} rounds")
-
-    logger.info("=" * 50)
-    logger.info("Running BASELINE experiment (diverse information)")
-    logger.info("=" * 50)
-    baseline_results = run_experiment(sim_config, BASELINE_EXPERIMENT, true_value_series=true_value_series)
-
-    logger.info("=" * 50)
-    logger.info("Running HERDING experiment (homogeneous information)")
-    logger.info("=" * 50)
-    herding_results = run_experiment(sim_config, HERDING_EXPERIMENT, true_value_series=true_value_series)
-
-    # Compare results
-    logger.info("=" * 50)
-    logger.info("COMPARISON")
-    logger.info("=" * 50)
-    logger.info(f"Baseline volatility: {baseline_results['volatility']:.2f}%")
-    logger.info(f"Herding volatility:  {herding_results['volatility']:.2f}%")
-    logger.info(f"Baseline flash crashes: {baseline_results['flash_crash_count']}")
-    logger.info(f"Herding flash crashes:  {herding_results['flash_crash_count']}")
+    
+    # Store all results for comparison
+    all_results = []
+    
+    # Loop over variance levels
+    for variance in VARIANCE_LIST:
+        logger.info("=" * 60)
+        logger.info(f"VARIANCE EXPERIMENT: signal_noise_std = {variance}")
+        logger.info("=" * 60)
+        
+        # Create a modified sim_config with the current variance
+        # We need to override signal_noise_std for this experiment
+        modified_sim_config = sim_config.model_copy()
+        modified_sim_config.signal_noise_std = variance
+        
+        # Run BASELINE (diverse information) with this variance
+        baseline_exp = ExperimentConfig(
+            experiment_name=f"baseline_var{int(variance)}",
+            experiment_description=f"Baseline (diverse info) with signal_noise_std={variance}",
+            homogeneous_information=False,
+        )
+        logger.info(f"Running BASELINE experiment (diverse info, variance={variance})")
+        baseline_results = run_experiment(
+            modified_sim_config, baseline_exp, true_value_series=true_value_series
+        )
+        baseline_results['variance'] = variance
+        baseline_results['condition'] = 'baseline'
+        all_results.append(baseline_results)
+        
+        # Run HERDING (homogeneous information) with this variance
+        herding_exp = ExperimentConfig(
+            experiment_name=f"herding_var{int(variance)}",
+            experiment_description=f"Herding (homogeneous info) with signal_noise_std={variance}",
+            homogeneous_information=True,
+        )
+        logger.info(f"Running HERDING experiment (homogeneous info, variance={variance})")
+        herding_results = run_experiment(
+            modified_sim_config, herding_exp, true_value_series=true_value_series
+        )
+        herding_results['variance'] = variance
+        herding_results['condition'] = 'herding'
+        all_results.append(herding_results)
+    
+    # Summary comparison
+    logger.info("=" * 60)
+    logger.info("FINAL COMPARISON ACROSS ALL EXPERIMENTS")
+    logger.info("=" * 60)
+    for result in all_results:
+        logger.info(
+            f"Variance={result['variance']:.0f}, Condition={result['condition']}: "
+            f"Volatility={result['volatility']:.2f}%, "
+            f"Flash Crashes={result['flash_crash_count']}"
+        )
 
 
 if __name__ == "__main__":
