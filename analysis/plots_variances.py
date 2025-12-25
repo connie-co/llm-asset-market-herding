@@ -9,6 +9,7 @@ import pandas as pd
 import seaborn as sns
 
 from .metrics import calculate_returns
+from src.data_loader import load_bst_data
 
 # Set style
 sns.set_theme(style="whitegrid")
@@ -421,7 +422,7 @@ def plot_price_series_by_variance(
     axes[0].plot(
         first_df["round"],
         first_df["true_value"],
-        label="True Value",
+        label="True Value (NAV)",
         color="black",
         linestyle="--",
         alpha=0.7,
@@ -429,9 +430,33 @@ def plot_price_series_by_variance(
     axes[1].plot(
         first_df["round"],
         first_df["true_value"],
-        label="True Value",
+        label="True Value (NAV)",
         color="black",
         linestyle="--",
+        alpha=0.7,
+    )
+
+    # --- Plot BST Market Price for comparison ---
+    nav_paa, price_paa = load_bst_data(paa_steps=200)
+    n_rounds = len(first_df)
+    price_trimmed = price_paa[:n_rounds]
+    
+    axes[0].plot(
+        first_df["round"],
+        price_trimmed,
+        label="BST Market Price",
+        color="red",
+        linestyle=":",
+        linewidth=2,
+        alpha=0.7,
+    )
+    axes[1].plot(
+        first_df["round"],
+        price_trimmed,
+        label="BST Market Price",
+        color="red",
+        linestyle=":",
+        linewidth=2,
         alpha=0.7,
     )
 
@@ -640,6 +665,10 @@ def main():
     print(f"  - Saved {herding_plot_path.name}")
 
     print("\nAll plots generated successfully!")
+    
+    # Display all plots
+    import matplotlib.pyplot as plt
+    plt.show()
 
 
 if __name__ == "__main__":

@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from .agent import AgentDecision, TradingAgent, configure_gemini, create_agents
 from .config import ExperimentConfig, SimulationConfig
+from .data_loader import get_true_value_series
 from .market import Action, Market, RoundResult
 
 logger = logging.getLogger(__name__)
@@ -281,15 +282,36 @@ def main():
     
     # Pre-generate true value series so ALL experiments use the same values
     # This ensures a fair comparison across all variance levels
-    temp_market = Market(
-        initial_price=sim_config.initial_price,
-        initial_true_value=sim_config.initial_true_value,
-        true_value_drift=sim_config.true_value_drift,
-        true_value_volatility=sim_config.true_value_volatility,
-        random_seed=42,  # Fixed seed for reproducibility
-    )
-    true_value_series = temp_market.generate_true_value_series(sim_config.n_rounds)
-    logger.info(f"Generated shared true value series for {sim_config.n_rounds} rounds")
+    if sim_config.use_cef_data:
+        logger.info("Loading BST CEF NAV data as true value series")
+        true_value_series = get_true_value_series(
+            n_rounds=sim_config.n_rounds,
+            use_cef_data=True,
+            paa_steps=200,  # Always use 200 PAA steps to preserve detail
+        )
+        logger.info(f"Loaded CEF NAV data: {len(true_value_series)} rounds (PAA with 200 steps, trimmed to n_rounds)")
+        logger.info(f"NAV range: ${min(true_value_series):.2f} - ${max(true_value_series):.2f}")
+        
+        # Override initial values with first NAV value from CEF data
+        initial_true_value = true_value_series[0]
+        logger.info(f"Setting initial_true_value to first NAV value: ${initial_true_value:.2f}")
+        # Update sim_config to use the CEF initial values for BOTH price and true_value
+        sim_config = sim_config.model_copy()
+        sim_config.initial_true_value = initial_true_value
+        sim_config.initial_price = initial_true_value  # Start price at NAV value too
+        logger.info(f"Setting initial_price to match NAV: ${initial_true_value:.2f}")
+    else:
+        logger.info("Generating random walk true value series")
+        initial_true_value = sim_config.initial_true_value
+        temp_market = Market(
+            initial_price=sim_config.initial_price,
+            initial_true_value=initial_true_value,
+            true_value_drift=sim_config.true_value_drift,
+            true_value_volatility=sim_config.true_value_volatility,
+            random_seed=42,  # Fixed seed for reproducibility
+        )
+        true_value_series = temp_market.generate_true_value_series(sim_config.n_rounds)
+        logger.info(f"Generated random walk true value series for {sim_config.n_rounds} rounds")
     
     # Store all results for comparison
     all_results = []

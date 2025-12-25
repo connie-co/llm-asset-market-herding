@@ -42,6 +42,9 @@ df = bst.join(nav, how='inner')
 #df[['Price', 'NAV']] = df[['Price', 'NAV']].str.replace('$', '', regex=False)
 # Drop any rows with missing values that might have slipped through
 df.dropna(inplace=True)
+
+# Sort by date ascending so Step 0 = earliest date (2020), Step N = latest (2025)
+df.sort_index(ascending=True, inplace=True)
 df = df.replace({'\$': ''}, regex=True)
 
 # Convert Price and NAV to numeric for calculations
@@ -49,7 +52,7 @@ df['Price'] = pd.to_numeric(df['Price'])
 df['NAV'] = pd.to_numeric(df['NAV'])
 # --- Piecewise Aggregate Approximation (PAA) ---
 # Define the desired length of the time series for the simulation
-N_STEPS = 300
+N_STEPS = 200
 
 # Extract the time series as numpy arrays
 price_series = df['Price'].values
@@ -124,6 +127,19 @@ ax.grid(True, alpha=0.3)
 
 # Rotate x-axis labels for better readability
 plt.xticks(rotation=45, ha='right')
+
+# --- Add secondary x-axis for step numbers ---
+ax2 = ax.twiny()  # Create twin axis sharing y-axis
+ax2.set_xlim(ax.get_xlim())  # Match the x-limits
+
+# Set step ticks at regular intervals (e.g., every 25 steps for 200 total)
+step_interval = max(1, N_STEPS // 8)  # Show ~8 tick marks
+step_ticks = list(range(0, N_STEPS, step_interval)) + [N_STEPS - 1]
+# Map step numbers to corresponding dates for positioning
+step_tick_positions = [paa_date_index[i] for i in step_ticks]
+ax2.set_xticks(step_tick_positions)
+ax2.set_xticklabels([str(s) for s in step_ticks])
+ax2.set_xlabel('Step (PAA segment)')
 
 plt.tight_layout()
 plt.show()
