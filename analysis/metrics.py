@@ -123,15 +123,34 @@ def compare_experiments(
     for name, df in [("Baseline", baseline_df), ("Herding", herding_df)]:
         returns = calculate_returns(df["price_after"].values)
         flash_events = count_flash_events(returns)
+        
+        # Calculate NAV Volatility and Efficiency
+        nav_vol = 0.0
+        bst_vol=0.0
+        efficiency_metrics = {
+            "mean_relative_deviation_pct": 0.0,
+            "rmse": 0.0
+        }
+        
+        if "true_value" in df.columns:
+            nav_vol = calculate_volatility(df["true_value"].values)
+            efficiency_metrics = calculate_price_efficiency(
+                df["price_after"].values, 
+                df["true_value"].values
+            )
 
         metrics.append({
             "Experiment": name,
             "Volatility (%)": calculate_volatility(df["price_after"].values),
+            "NAV Volatility (%)": nav_vol,
+            "BST Volatility (%)": bst_vol,
             "Mean Return (%)": float(np.mean(returns)) if len(returns) > 0 else 0,
             "Flash Crashes": flash_events["flash_crashes"],
             "Flash Rallies": flash_events["flash_rallies"],
             "Mean Herding Index": float(df["herding_index"].mean()),
             "Max Herding Index": float(df["herding_index"].max()),
+            "Price Efficiency (RMSE)": efficiency_metrics["rmse"],
+            "Mean Relative Deviation (%)": efficiency_metrics["mean_relative_deviation_pct"],
         })
 
     return pd.DataFrame(metrics)

@@ -1,0 +1,91 @@
+{
+    "description": "Configuration file for selecting which simulation runs to include in analysis",
+    "notes": "Add timestamps (YYYYMMDD_HHMMSS) to include runs. Remove or comment out to exclude.",
+    
+    "configurations": {
+        "baseline_var5": {
+            "condition": "baseline",
+            "variance": 5,
+            "description": "Heterogeneous information, low noise (σ=5)",
+            "runs": [
+                "20251230_170315",
+                "20251231_035845",
+                "20251231_145111",
+                "20251231_194949",
+                "20260101_021447",
+                "20260102_011335"
+            ]
+        },
+        "baseline_var12": {
+            "condition": "baseline", 
+            "variance": 12,
+            "description": "Heterogeneous information, medium noise (σ=12)",
+            "runs": [
+                "20251230_194135",
+                "20251231_052938",
+                "20251231_161925",
+                "20251231_211413",
+                "20260101_034442",
+                "20260102_025824"
+            ]
+        },
+        "baseline_var20": {
+            "condition": "baseline",
+            "variance": 20,
+            "description": "Heterogeneous information, high noise (σ=20)",
+            "runs": [
+                "20251230_211250",
+                "20251231_070731",
+                "20251231_174639",
+                "20251231_224117",
+                "20260101_051508",
+                "20260102_055022"
+            ]
+        },
+        "herding_var5": {
+            "condition": "herding",
+            "variance": 5,
+            "description": "Homogeneous information, low noise (σ=5)",
+            "runs": [
+                "20251230_182016",
+                "20251231_044210",
+                "20251231_153438",
+                "20251231_203145",
+                "20260101_025830",
+                "20260102_020144"
+            ]
+        },
+        "herding_var12": {
+            "condition": "herding",
+            "variance": 12,
+            "description": "Homogeneous information, medium noise (σ=12)",
+            "runs": [
+                "20251230_202624",
+                "20251231_061743",
+                "20251231_170234",
+                "20251231_215701",
+                "20260101_043031",
+                "20260102_040737"
+            ]
+        },
+        "herding_var20": {
+            "condition": "herding",
+            "variance": 20,
+            "description": "Homogeneous information, high noise (σ=20)",
+            "runs": [
+                "20251230_215816",
+                "20251231_075334",
+                "20251231_232354",
+                "20260101_055925",
+                "20260102_072723"
+            ]
+        }
+    },
+
+    "analysis_settings": {
+        "confidence_level": 0.95,
+        "min_runs_required": 3,
+        "flash_crash_threshold": 5.0,
+        "flash_rally_threshold": 5.0
+    }
+}

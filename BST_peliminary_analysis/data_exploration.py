@@ -52,7 +52,7 @@ df['Price'] = pd.to_numeric(df['Price'])
 df['NAV'] = pd.to_numeric(df['NAV'])
 # --- Piecewise Aggregate Approximation (PAA) ---
 # Define the desired length of the time series for the simulation
-N_STEPS = 200
+N_STEPS = 100
 
 # Extract the time series as numpy arrays
 price_series = df['Price'].values

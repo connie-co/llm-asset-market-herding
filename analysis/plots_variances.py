@@ -176,6 +176,7 @@ def plot_volatility_comparison(
 def plot_return_distribution(
     baseline_df: pd.DataFrame,
     herding_df: pd.DataFrame,
+    variance: Optional[float] = None,
     save_path: Optional[Path] = None,
 ) -> plt.Figure:
     """
@@ -216,7 +217,10 @@ def plot_return_distribution(
 
     ax.set_xlabel("Return (%)")
     ax.set_ylabel("Frequency")
-    ax.set_title("Distribution of Returns")
+    title = "Distribution of Returns"
+    if variance is not None: #way of adding text with conditions
+        title += f" (Noise Std Dev = {variance})"
+    ax.set_title(title)
     ax.legend()
     ax.grid(True, alpha=0.3)
 
@@ -512,21 +516,74 @@ def plot_volatility_by_variance(
     variances = sorted(data_by_variance.keys())
     baseline_vols = []
     herding_vols = []
-
+    nav_vols = []
+    bst_vols=[]
+    
+    # Calculate BST Volatility (Real Market Data)
+    # We calculate this once and reuse it for all variance levels since it's the benchmark
+    
+    # 1. Get a sample dataframe to determine n_rounds
+    if not variances:
+        return  # No data
+        
+    first_var = variances[0]
+    if 'baseline' in data_by_variance[first_var]:
+        sample_df = data_by_variance[first_var]['baseline']
+    elif 'herding' in data_by_variance[first_var]:
+        sample_df = data_by_variance[first_var]['herding']
+    else:
+        sample_df = None
+        
+    # 2. Calculate BST volatility if we have a sample
+    bst_vol_value = np.nan
+    if sample_df is not None:
+        n_rounds = len(sample_df)
+        
+        # Load real BST data (returns tuple: nav, price)
+        # We only need the price (index 1)
+        _, bst_prices = load_bst_data(paa_steps=200)
+        
+        # TRIM it to match the simulation length!
+        bst_prices_trimmed = bst_prices[:n_rounds]
+        
+        # Calculate returns and volatility
+        bst_returns = calculate_returns(bst_prices_trimmed)
+        bst_vol_value = np.std(bst_returns)
+    
+    # 3. Create a list of the same value for plotting (constant line)
+    bst_vols = [bst_vol_value] * len(variances)
+    
     for var in variances:
         # Calculate baseline volatility
         if 'baseline' in data_by_variance[var]:
             baseline_df = data_by_variance[var]['baseline']
             baseline_returns = calculate_returns(baseline_df["price_after"].values)
             baseline_vols.append(np.std(baseline_returns))
+            
+            # Calculate NAV volatility (from baseline run)
+            if "true_value" in baseline_df.columns:
+                nav_returns = calculate_returns(baseline_df["true_value"].values)
+                nav_vols.append(np.std(nav_returns))
+            else:
+                nav_vols.append(np.nan)
         else:
-            baseline_vols.append(np.nan) # Use NaN for missing data
+            baseline_vols.append(np.nan)
+            # Try to get NAV volatility from herding run if baseline is missing
+            if 'herding' in data_by_variance[var] and "true_value" in data_by_variance[var]['herding'].columns:
+                herding_df = data_by_variance[var]['herding']
+                nav_returns = calculate_returns(herding_df["true_value"].values)
+                nav_vols.append(np.std(nav_returns))
+                
+            else:
+                nav_vols.append(np.nan)
 
         # Calculate herding volatility
         if 'herding' in data_by_variance[var]:
             herding_df = data_by_variance[var]['herding']
             herding_returns = calculate_returns(herding_df["price_after"].values)
-            herding_vols.append(np.std(herding_returns))
+            herding_vol = np.std(herding_returns)
+            herding_vols.append(herding_vol)
+            print(f'\n=== HERDING VAR {var} ===\nReturns: {herding_returns}\nVolatility: {herding_vol:.4f}%')
         else:
             herding_vols.append(np.nan)
 
@@ -534,7 +591,15 @@ def plot_volatility_by_variance(
 
     ax.plot(variances, baseline_vols, marker='o', linestyle='-', label="Baseline (Diverse Info)")
     ax.plot(variances, herding_vols, marker='s', linestyle='-', label="Herding (Homogeneous Info)")
-
+    
+    # Plot NAV volatility if available
+    if not all(np.isnan(nav_vols)):
+        # Plot as a dashed line (should be roughly constant if same NAV data used)
+        ax.plot(variances, nav_vols, marker='^', linestyle='--', color='gray', alpha=0.7, label="True Value (NAV) Volatility")
+    # Plot BST Volatility
+    if not all(np.isnan(bst_vols)):
+        ax.plot(variances, bst_vols, marker='*', linestyle=':', color='black', 
+                alpha=0.8, label="Real Market (BST) Volatility")
     ax.set_xlabel("Signal Noise Standard Deviation")
     ax.set_ylabel("Price Volatility (Std Dev of Returns, %)")
     ax.set_title("Market Volatility vs. Information Noise")
@@ -663,6 +728,18 @@ def main():
     herding_plot_path = plots_dir / "variance_herding_comparison.png"
     plot_herding_by_variance(data_by_variance, save_path=herding_plot_path)
     print(f"  - Saved {herding_plot_path.name}")
+
+    # Plot 4: Return Distribution for each variance level
+    for var in sorted(data_by_variance.keys()):
+        if 'baseline' in data_by_variance[var] and 'herding' in data_by_variance[var]:
+            return_plot_path = plots_dir / f"variance_{var}_return_distribution.png"
+            plot_return_distribution(
+                data_by_variance[var]['baseline'],
+                data_by_variance[var]['herding'],
+                variance=var,
+                save_path=return_plot_path
+            )
+            print(f"  - Saved {return_plot_path.name}")
 
     print("\nAll plots generated successfully!")
     

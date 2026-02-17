@@ -21,7 +21,7 @@ class SimulationConfig(BaseSettings):
 
     # Market Parameters
     n_agents: int = Field(default=15, ge=2, le=50, description="Number of trading agents")
-    n_rounds: int = Field(default=200, ge=5, le=500, description="Number of trading rounds")
+    n_rounds: int = Field(default=50, ge=5, le=500, description="Number of trading rounds")
     initial_price: float = Field(default=100.0, gt=0, description="Initial asset price (ignored if use_cef_data=True; will use first NAV value)")
     initial_true_value: float = Field(
         default=100.0, gt=0, description="Initial true value of asset (ignored if use_cef_data=True; will use first NAV value)"
@@ -45,7 +45,7 @@ class SimulationConfig(BaseSettings):
 
     # Price Mechanism
     price_impact: float = Field(
-        default=1.0, gt=0, description="Price change per unit of net demand"
+        default=2.0, gt=0, description="Price change per unit of net demand"
     )
     max_price_change: float = Field(
         default=10.0, gt=0, description="Maximum price change per round"
@@ -93,8 +93,8 @@ class ExperimentConfig(BaseSettings):
     # Number of simulation runs for statistical significance
     n_runs: int = Field(default=5, ge=1, description="Number of simulation runs")
 
-    # Random seed for reproducibility
-    random_seed: int | None = Field(default=42, description="Random seed (None for random)")
+    # Random seed for reproducibility (previously 42)
+    random_seed: int | None = Field(default=None, description="Random seed (None for random)")
 
 
 # Default configurations for quick access

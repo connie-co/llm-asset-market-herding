@@ -8,7 +8,7 @@ import pandas as pd
 from tslearn.piecewise import PiecewiseAggregateApproximation
 
 
-def load_bst_nav_data(paa_steps: int = 200) -> np.ndarray:
+def load_bst_nav_data(paa_steps: int = 100) -> np.ndarray:
     """
     Load BST CEF NAV data and downsample using PAA.
     
