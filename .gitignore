@@ -84,7 +84,8 @@ dmypy.json
 .ruff_cache/
 
 # Project specific
-data/
+data/*
+!data/README.md
 plots/
 BST_preliminary_analysis/
 BST_peliminary_analysis/
