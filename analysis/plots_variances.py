@@ -583,7 +583,6 @@ def plot_volatility_by_variance(
             herding_returns = calculate_returns(herding_df["price_after"].values)
             herding_vol = np.std(herding_returns)
             herding_vols.append(herding_vol)
-            print(f'\n=== HERDING VAR {var} ===\nReturns: {herding_returns}\nVolatility: {herding_vol:.4f}%')
         else:
             herding_vols.append(np.nan)
 

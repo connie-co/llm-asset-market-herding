@@ -93,7 +93,7 @@ class ExperimentConfig(BaseSettings):
     # Number of simulation runs for statistical significance
     n_runs: int = Field(default=5, ge=1, description="Number of simulation runs")
 
-    # Random seed for reproducibility (previously 42)
+    # Random seed for reproducibility
     random_seed: int | None = Field(default=None, description="Random seed (None for random)")
 
 

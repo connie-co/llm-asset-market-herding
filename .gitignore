@@ -84,8 +84,11 @@ dmypy.json
 .ruff_cache/
 
 # Project specific
-data/results/*.csv
-data/results/*.json
+data/
+plots/
+BST_preliminary_analysis/
+BST_peliminary_analysis/
+analysis/plot_selected_runs.py
 *.log
 CODE_WALKTHROUGH.md
 
